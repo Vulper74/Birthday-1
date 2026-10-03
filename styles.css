@@ -1,0 +1,170 @@
+:root {
+  --ugalj: #0E0E0E;
+  --grafit: #1A1A1A;
+  --linija: #2B2B2B;
+  --beton: #8A8784;
+  --kost: #E8E4DE;
+  --neon: #FF2E88;
+  --wa-bg: #2A2526;
+  --wa-balon: #222524;
+  --font: "Space Grotesk", -apple-system, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  --top: max(env(safe-area-inset-top), 20px);
+  --bottom: max(env(safe-area-inset-bottom), 16px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--ugalj); color: var(--kost); overflow: hidden; overscroll-behavior: none; }
+body {
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+[hidden] { display: none !important; }
+.mono { font-family: var(--mono); }
+
+/* Stranice (prevlačenje levo-desno) */
+.pages {
+  display: flex; height: 100dvh; overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory; scrollbar-width: none;
+}
+.pages::-webkit-scrollbar { display: none; }
+.page {
+  flex: 0 0 100vw; height: 100%; scroll-snap-align: start; position: relative;
+  padding: calc(var(--top) + 28px) 24px calc(var(--bottom) + 48px);
+  display: flex; flex-direction: column;
+}
+
+.label { font-size: 12px; color: var(--beton); letter-spacing: 0.02em; }
+.big { font-size: clamp(88px, 30vw, 140px); line-height: 0.9; font-weight: 500; letter-spacing: -0.04em; margin-top: 20px; text-align: left; }
+.unit { font-size: 15px; color: var(--beton); margin-top: 6px; }
+.hms { font-size: 22px; margin-top: 16px; letter-spacing: 0.02em; }
+.mid { font-size: 34px; font-weight: 500; letter-spacing: -0.02em; margin-top: 6px; }
+.sub { font-size: 12px; color: var(--beton); margin-top: 6px; }
+.link { font-size: 12px; color: var(--beton); text-decoration: underline; text-underline-offset: 3px; padding: 8px 0; align-self: flex-start; }
+
+.bar { height: 2px; background: var(--grafit); margin-top: 28px; }
+.bar > div { height: 100%; width: 0; background: var(--neon); transition: width 1s linear; }
+
+.edit-date { position: relative; margin-top: 10px; }
+.edit-date input { position: absolute; inset: 0; opacity: 0; width: 100%; }
+
+.together { margin-top: auto; border-top: 0.5px solid var(--linija); padding-top: 16px; }
+
+/* Tajna: 7 dodira */
+.tap-pulse { animation: pulse 0.25s ease-out; }
+@keyframes pulse { 50% { transform: scale(0.97); } }
+
+/* Daljina */
+.km { align-self: flex-start; min-height: 0.9em; }
+.km-dots { display: flex; gap: 6px; margin-top: 12px; }
+.km-dots i { width: 4px; height: 4px; border-radius: 50%; background: #3a3a3a; transition: background 0.2s; }
+.km-dots i.on { background: var(--kost); }
+.km-hint { position: absolute; top: calc(var(--top) + 28px); right: 24px; font-size: 11px; color: var(--neon); animation: appear 1s ease 1s both; }
+.map-wrap {
+  margin: 24px -24px 0; height: 38dvh; position: relative;
+  -webkit-mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent);
+}
+#map { width: 100%; height: 100%; display: block; }
+#map .kopno { fill: #1C1C1C; stroke: none; }
+#map .ruta { fill: none; stroke: var(--kost); stroke-width: 1.2; stroke-dasharray: 3 5; vector-effect: non-scaling-stroke; }
+#map .ruta-anim { animation: dash 30s linear infinite; }
+@keyframes dash { to { stroke-dashoffset: -160; } }
+.cities { display: flex; justify-content: space-between; margin-top: 18px; }
+.city .name { font-size: 18px; }
+.city .ko { font-size: 12px; color: var(--beton); }
+.city .coords { font-size: 11px; color: var(--beton); margin-top: 6px; line-height: 1.5; }
+.city .now { font-size: 13px; margin-top: 8px; line-height: 1.5; }
+.city .now .w { color: var(--beton); }
+.city.right { text-align: right; }
+#cities-edit { margin-top: auto; }
+
+/* Tačka za dugo držanje */
+.hold-ring { fill: none; stroke: var(--neon); }
+
+/* Dobro jutro */
+#p-gm { justify-content: flex-start; }
+.gm-title { font-size: 40px; line-height: 1.05; font-weight: 500; letter-spacing: -0.03em; margin-top: 20px; }
+.gm-btn {
+  margin-top: auto; width: 100%; padding: 20px; border: 1px solid var(--kost); border-radius: 999px;
+  font-size: 17px; letter-spacing: -0.01em; transition: background 0.2s, color 0.2s;
+}
+.gm-btn:active { background: var(--kost); color: var(--ugalj); }
+
+/* Tačkice za navigaciju */
+.dots { position: fixed; left: 0; right: 0; bottom: calc(var(--bottom) + 4px); display: flex; justify-content: center; gap: 4px; }
+.dots button { width: 28px; height: 28px; display: grid; place-items: center; }
+.dots button::after { content: ""; width: 6px; height: 6px; border-radius: 50%; border: 1px solid var(--beton); transition: all 0.2s; }
+.dots button.on::after { background: var(--kost); border-color: var(--kost); }
+
+/* WhatsApp */
+.wa {
+  position: fixed; inset: 0; background: var(--wa-bg); display: flex; flex-direction: column; z-index: 20;
+  font-family: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif; color: #E9EDEF;
+  animation: slideIn 0.3s cubic-bezier(.2,.8,.2,1);
+}
+@keyframes slideIn { from { transform: translateX(100%); } }
+.wa-head {
+  display: flex; align-items: center; gap: 10px; padding: calc(var(--top) + 6px) 14px 10px 8px;
+  background: #121212; border-bottom: 0.5px solid #2a2a2a;
+}
+.wa-back { padding: 4px 8px; display: grid; place-items: center; }
+.wa-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+.wa-who { flex: 1; min-width: 0; }
+.wa-name { font-size: 16px; font-weight: 600; }
+.wa-status { font-size: 12px; color: #8D9598; }
+.wa-icon { margin-left: 18px; }
+.wa-chat { flex: 1; padding: 12px 10px; display: flex; flex-direction: column; overflow: hidden; }
+.wa-day {
+  align-self: center; font-size: 12px; color: #B9BDBF; background: #1D1F1F; padding: 5px 10px;
+  border-radius: 8px; margin-bottom: 12px;
+}
+.wa-msg {
+  align-self: flex-start; max-width: 80%; background: var(--wa-balon); position: relative;
+  border-radius: 4px 12px 12px 12px; padding: 6px 9px 7px 11px; font-size: 17px; line-height: 1.32;
+  animation: pop 0.22s cubic-bezier(.2,.9,.3,1.2); margin-left: 8px;
+}
+.wa-msg::after {
+  content: ""; position: absolute; top: 0; left: -7px; width: 8px; height: 13px;
+  background: var(--wa-balon); clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+@keyframes pop { from { transform: scale(0.85) translateY(10px); opacity: 0; } }
+.wa-meta { float: right; margin: 8px 0 -4px 12px; font-size: 11.5px; color: rgba(233,237,239,0.55); }
+.wa-input {
+  display: flex; align-items: center; gap: 14px; padding: 8px 14px calc(var(--bottom) + 4px);
+  background: #121212; color: #E9EDEF;
+}
+.wa-field { flex: 1; height: 34px; border-radius: 18px; background: #262626; }
+
+/* Promena gradova */
+.sheet { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: flex-end; z-index: 15; }
+.sheet-body {
+  width: 100%; background: var(--ugalj); border-top: 0.5px solid var(--linija);
+  padding: 20px 24px calc(var(--bottom) + 12px); min-height: 60dvh; display: flex; flex-direction: column;
+}
+.sheet-input {
+  margin-top: 10px; font: inherit; font-size: 28px; color: var(--kost); background: none; border: 0;
+  border-bottom: 1px solid var(--linija); padding: 6px 0; outline: none; -webkit-user-select: text; user-select: text;
+}
+.sheet-input::placeholder { color: #444; }
+.sheet-results { list-style: none; margin-top: 8px; flex: 1; }
+.sheet-results li { padding: 12px 0; border-bottom: 0.5px solid var(--linija); font-size: 17px; }
+.sheet-results li span { color: var(--beton); font-size: 13px; margin-left: 8px; }
+.sheet-actions { display: flex; justify-content: space-between; }
+
+/* Tajna poruka i uvod */
+.secret, .intro {
+  position: fixed; inset: 0; background: var(--ugalj); z-index: 30; display: flex; flex-direction: column;
+  justify-content: center; padding: 32px; animation: fade 0.5s ease;
+}
+@keyframes fade { from { opacity: 0; } }
+@keyframes appear { from { opacity: 0; } to { opacity: 1; } }
+.secret-text, .intro-text { font-size: 34px; line-height: 1.1; font-weight: 500; letter-spacing: -0.03em; white-space: pre-line; }
+.secret-text { color: var(--neon); }
+.intro-text span { display: block; opacity: 0; animation: appear 1.2s ease forwards; }
+.intro-hint { position: absolute; bottom: calc(var(--bottom) + 24px); left: 32px; font-size: 12px; color: var(--beton); opacity: 0; animation: appear 1s ease 3.6s forwards; }
