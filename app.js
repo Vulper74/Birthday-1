@@ -270,23 +270,23 @@
     svg.setAttribute("viewBox", `${cx - w / 2} ${cy - h / 2} ${w} ${h}`);
     const px = w / W; // koliko jedinica karte je jedan piksel
 
-    const tacka = (g, boja) => { const [x, y] = pr([g.lon, g.lat]); return `<circle cx="${x}" cy="${y}" r="${4.5 * px}" fill="${boja}"/>`; };
-    const on = [a, b].find((g) => g.ko === PODACI.ime);
-    const ona = [a, b].find((g) => g !== on);
-    const [ox, oy] = on ? pr([on.lon, on.lat]) : [0, 0];
+    const tacka = (g, klasa) => { const [x, y] = pr([g.lon, g.lat]); return `<circle class="${klasa}" cx="${x}" cy="${y}" r="${4.5 * px}"/>`; };
+    // Njegov grad je onaj sa njegovim imenom, inače prvi
+    const on = [a, b].find((g) => g.ko === PODACI.ime) || a;
+    const ona = on === a ? b : a;
+    const [ox, oy] = pr([on.lon, on.lat]);
     const obim = 2 * Math.PI * 13 * px;
 
     svg.innerHTML = `
       ${typeof KOPNO === "string" ? `<path class="kopno" transform="scale(${k} 1)" d="${KOPNO}"/>` : ""}
       <path class="ruta ruta-anim" d="M${ruta.map((p) => p.join(",")).join("L")}"/>
-      ${tacka(ona, "#E8E4DE")}
-      ${on ? `
-        ${tacka(on, "#FF2E88")}
-        <circle class="hold-ring" id="hold-ring" cx="${ox}" cy="${oy}" r="${13 * px}" stroke-width="${2 * px}"
-          stroke-dasharray="${obim}" stroke-dashoffset="${obim}" transform="rotate(-90 ${ox} ${oy})"/>
-        <circle id="hold-hit" cx="${ox}" cy="${oy}" r="${26 * px}" fill="transparent" style="touch-action:none"/>` : ""}`;
+      ${tacka(ona, "tacka-ona")}
+      ${tacka(on, "tacka-on")}
+      <circle class="hold-ring" id="hold-ring" cx="${ox}" cy="${oy}" r="${13 * px}" stroke-width="${2 * px}"
+        stroke-dasharray="${obim}" stroke-dashoffset="${obim}" transform="rotate(-90 ${ox} ${oy})"/>
+      <circle id="hold-hit" cx="${ox}" cy="${oy}" r="${26 * px}" fill="transparent" style="touch-action:none"/>`;
 
-    if (on) podesiDugoDrzanje(obim);
+    podesiDugoDrzanje(obim);
   }
 
   // Dugo držanje (1,2 s) na njegovoj tački
@@ -319,13 +319,36 @@
     return c === c.toLowerCase() ? l : l.charAt(0).toUpperCase() + l.slice(1);
   });
 
+  // Pretraga zna srpska imena (Pariz, Beč, Njujork) samo na ćirilici, pa tražimo oba
+  const LAT = { a: "а", b: "б", v: "в", g: "г", d: "д", đ: "ђ", e: "е", ž: "ж", z: "з", i: "и", j: "ј", k: "к", l: "л",
+    m: "м", n: "н", o: "о", p: "п", r: "р", s: "с", t: "т", ć: "ћ", u: "у", f: "ф", h: "х", c: "ц", č: "ч", š: "ш" };
+  const cirilica = (s) => s
+    .replace(/dž|lj|nj/gi, (d) => {
+      const c = { dž: "џ", lj: "љ", nj: "њ" }[d.toLowerCase()];
+      return d[0] === d[0].toLowerCase() ? c : c.toUpperCase();
+    })
+    .replace(/[a-zđžćčš]/gi, (c) => {
+      const l = LAT[c.toLowerCase()];
+      if (!l) return c;
+      return c === c.toLowerCase() ? l : l.toUpperCase();
+    });
+
+  async function trazi(q) {
+    const upiti = [...new Set([q, cirilica(q)])].map((u) =>
+      fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(u)}&count=8&language=sr&format=json`)
+        .then((r) => r.json()).then((j) => j.results || []));
+    const svi = (await Promise.all(upiti)).flat();
+    const jedinstveni = [...new Map(svi.map((g) => [g.id, g])).values()];
+    return jedinstveni.sort((a, b) => (b.population || 0) - (a.population || 0)).slice(0, 6);
+  }
+
   function podesiGradove() {
     const sheet = $("sheet"), inp = $("sheet-input"), lista = $("sheet-results");
     let izabrani = [], tajmer = null, rezultati = [];
 
     const otvori = () => {
       izabrani = [];
-      $("sheet-step").textContent = "prvi grad";
+      $("sheet-step").textContent = "njegov grad";
       inp.value = ""; lista.innerHTML = "";
       sheet.hidden = false;
       setTimeout(() => inp.focus(), 50);
@@ -343,10 +366,9 @@
       if (q.length < 2) { lista.innerHTML = ""; return; }
       tajmer = setTimeout(async () => {
         try {
-          const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=sr&format=json`);
-          const j = await r.json();
+          const nadjeni = await trazi(q);
           if (inp.value.trim() !== q) return;
-          rezultati = j.results || [];
+          rezultati = nadjeni;
           lista.innerHTML = rezultati.length
             ? rezultati.map((g, i) => `<li data-i="${i}">${esc(latinica(g.name))}<span>${esc(latinica(g.country || ""))}</span></li>`).join("")
             : `<li><span>nema rezultata</span></li>`;
@@ -360,13 +382,15 @@
       const li = e.target.closest("li[data-i]");
       if (!li) return;
       const g = rezultati[+li.dataset.i];
-      izabrani.push({ ime: latinica(g.name), lat: g.latitude, lon: g.longitude, tz: g.timezone, ko: "" });
+      // Prvi izabrani je njegov grad, drugi njen
+      const ko = izabrani.length ? "ti" : PODACI.ime;
+      izabrani.push({ ime: latinica(g.name), lat: g.latitude, lon: g.longitude, tz: g.timezone, ko });
       if (izabrani.length === 2) {
         store.set("gradovi", izabrani);
         zatvori();
         osveziDaljinu();
       } else {
-        $("sheet-step").textContent = "drugi grad";
+        $("sheet-step").textContent = "moj grad";
         inp.value = ""; lista.innerHTML = "";
         inp.focus();
       }

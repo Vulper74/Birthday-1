@@ -11,9 +11,10 @@ const PODACI = {
   sledeceVidjenje: "2026-10-18T21:00:00+02:00",
   odbrojavanjeOd: "2026-10-11T18:00:00+02:00",
 
+  // Prvi je uvek njegov grad (maslinasta tačka), drugi njen (neon roze).
   gradovi: [
-    { ime: "Beograd", lat: 44.8125, lon: 20.4612, tz: "Europe/Belgrade", ko: "ti" },
     { ime: "Dablin", lat: 53.3498, lon: -6.2603, tz: "Europe/Dublin", ko: "Mihailo" },
+    { ime: "Beograd", lat: 44.8125, lon: 20.4612, tz: "Europe/Belgrade", ko: "ti" },
   ],
 
   // Tvoje poruke, tačno kako si ih napisao. Gde se završava samo srcima, aplikacija sama menja broj srca (1–3).

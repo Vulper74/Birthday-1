@@ -5,6 +5,7 @@
   --beton: #8A8784;
   --kost: #E8E4DE;
   --neon: #FF2E88;
+  --maslina: #9AA55A;
   --wa-bg: #2A2526;
   --wa-balon: #222524;
   --font: "Space Grotesk", -apple-system, sans-serif;
@@ -85,7 +86,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 #cities-edit { margin-top: auto; }
 
 /* Tačka za dugo držanje */
-.hold-ring { fill: none; stroke: var(--neon); }
+#map .tacka-on { fill: var(--maslina); }
+#map .tacka-ona { fill: var(--neon); }
+.hold-ring { fill: none; stroke: var(--maslina); }
 
 /* Dobro jutro */
 #p-gm { justify-content: flex-start; }
