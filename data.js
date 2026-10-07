@@ -42,9 +42,25 @@ const PODACI = {
     "Dobro jutro lepoto❤️",
   ],
 
-  // Skrivena iznenađenja. Tekst je privremen, ti napišeš pravi.
+  // Skrivena iznenađenja
   tajne: {
-    sedamDodira: "Našla si tajnu.\nNapiši ovde nešto samo za nju.",
-    dugoDrzanje: "Ovde sam.\nI baš sad mislim na tebe.",
+    // 7 brzih dodira na broj dana
+    sedamDodira: "Je l opet gledaš Djokovića??",
+
+    // Dugo držanje na tvojoj tački na karti: svaki put sledeća činjenica, ukrug.
+    // Prva rečenica je naslov, ostatak ide sitnije ispod.
+    dugoDrzanje: [
+      "Nisu ni krtice ni pacovi. Najbliži rođaci su im bodljikavo prase i zamorče.",
+      "Na srpskom se zovu golo slepo kuče. Iako nisu kučići. A nisu ni sasvim slepi, samo jako loše vide. Ali jesu goli.",
+      "Žive jako dugo. Mogu da dožive i preko 30 godina, oko 10 puta duže od drugih glodara te veličine. Za razliku od skoro svih sisara, rizik da uginu skoro da ne raste kako stare.",
+      "Skoro nikad ne dobijaju rak. Jedan od razloga je gust oblik hijaluronana, šećera u njihovom tkivu, koji izgleda sprečava ćelije da se zbijaju i prave tumore.",
+      "Mogu 18 minuta bez kiseonika. Telo im tada pređe na sagorevanje fruktoze, trik koji se obično viđa kod biljaka.",
+      "Ne osećaju neke vrste bola. Kiselina i ljutina čili papričica (kapsaicin) im uopšte ne smetaju.",
+      "Kolonija im radi kao košnica. Razmnožava se samo kraljica, a ostali su radnici i vojnici. Kad postane kraljica, kičma joj se izduži da bi mogla da nosi više mladunaca.",
+      "Svaka kolonija ima svoj akcenat. Cvrkuću na dijalektu svoje kolonije, a izgleda da ga određuje kraljica. Mladunci odgajeni u drugoj koloniji nauče njen dijalekat.",
+      "Zubi su im ispred usana. Tako mogu da kopaju zubima, a da im zemlja ne ulazi u usta. Oko 25% mišića im je u vilici, a dva donja prednja zuba mogu da pomeraju odvojeno.",
+      "Jedva su toplokrvni. Ne mogu dobro da održavaju telesnu temperaturu, pa se zbijaju jedni uz druge ili prelaze u toplije ili hladnije tunele.",
+      "Unazad trče jednako brzo kao unapred. To im pomaže u uskim tunelima.",
+    ],
   },
 };

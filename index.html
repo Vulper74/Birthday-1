@@ -20,7 +20,14 @@
 
 <main class="pages" id="pages">
 
-  <!-- 1. Odbrojavanje -->
+  <!-- 1. Dobro jutro -->
+  <section class="page" id="p-gm">
+    <div class="label mono" id="gm-date"></div>
+    <div class="gm-title">Ko se to meni<br>probudio?</div>
+    <button class="gm-btn" id="gm-btn">Emergency dobro jutro</button>
+  </section>
+
+  <!-- 2. Odbrojavanje -->
   <section class="page" id="p-home">
     <div class="label mono" id="cd-label">do --</div>
     <div class="big" id="cd-days">--</div>
@@ -39,7 +46,7 @@
     </div>
   </section>
 
-  <!-- 2. Daljina -->
+  <!-- 3. Daljina -->
   <section class="page" id="p-dist">
     <div class="label mono" id="km-label">vazdušnom linijom</div>
     <button class="big km" id="km">--</button>
@@ -53,19 +60,12 @@
     <button class="link mono" id="cities-edit">drugi gradovi</button>
   </section>
 
-  <!-- 3. Dobro jutro -->
-  <section class="page" id="p-gm">
-    <div class="label mono" id="gm-date"></div>
-    <div class="gm-title">Ko se to meni<br>probudio?</div>
-    <button class="gm-btn" id="gm-btn">Emergency dobro jutro</button>
-  </section>
-
 </main>
 
 <nav class="dots" id="dots">
+  <button aria-label="Dobro jutro"></button>
   <button aria-label="Odbrojavanje"></button>
   <button aria-label="Daljina"></button>
-  <button aria-label="Dobro jutro"></button>
 </nav>
 
 <!-- WhatsApp ekran -->
@@ -107,7 +107,11 @@
 </div>
 
 <!-- Tajna poruka -->
-<div class="secret" id="secret" hidden><div class="secret-text" id="secret-text"></div></div>
+<div class="secret" id="secret" hidden>
+  <div class="label mono secret-label" id="secret-label"></div>
+  <div class="secret-text" id="secret-text"></div>
+  <div class="secret-more" id="secret-more"></div>
+</div>
 
 <!-- Uvod (samo prvi put) -->
 <div class="intro" id="intro" hidden>

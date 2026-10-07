@@ -72,10 +72,21 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
   mask-image: linear-gradient(transparent, #000 12%, #000 88%, transparent);
 }
 #map { width: 100%; height: 100%; display: block; }
-#map .kopno { fill: #1C1C1C; stroke: none; }
+#map .kopno { fill: #1C1C1C; stroke: #3A3A3A; stroke-width: 0.6; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+#map .granice { fill: none; stroke: #3A3A3A; stroke-width: 0.6; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+#map #ruta { pointer-events: none; }
 #map .ruta { fill: none; stroke: var(--kost); stroke-width: 1.2; stroke-dasharray: 3 5; vector-effect: non-scaling-stroke; }
 #map .ruta-anim { animation: dash 30s linear infinite; }
 @keyframes dash { to { stroke-dashoffset: -160; } }
+#map .ruta-let { stroke-dasharray: 6 5; opacity: 0.7; }
+#map .drum { fill: none; stroke: #333; stroke-width: 6; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+#map .ruta-drum { stroke-width: 0.8; stroke-dasharray: 3 4; opacity: 0.8; }
+#map .ruta-ptica { stroke-width: 1; stroke-dasharray: 1 4; stroke-linecap: round; opacity: 0.6; }
+#map .vozilo { fill: var(--kost); }
+#map .vozilo .staklo { fill: var(--ugalj); }
+#map .vozilo .krila { fill: none; stroke: var(--kost); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#map .stopa { fill: var(--kost); animation: stopa 8s linear infinite backwards; }
+@keyframes stopa { 0% { opacity: 0; } 1% { opacity: 1; } 25%, 100% { opacity: 0.2; } }
 .cities { display: flex; justify-content: space-between; margin-top: 18px; }
 .city .name { font-size: 18px; }
 .city .ko { font-size: 12px; color: var(--beton); }
@@ -168,6 +179,9 @@ button { font: inherit; color: inherit; background: none; border: 0; cursor: poi
 @keyframes fade { from { opacity: 0; } }
 @keyframes appear { from { opacity: 0; } to { opacity: 1; } }
 .secret-text, .intro-text { font-size: 34px; line-height: 1.1; font-weight: 500; letter-spacing: -0.03em; white-space: pre-line; }
-.secret-text { color: var(--neon); }
+.secret-text { color: var(--maslina); }
+.secret-label { margin-bottom: 18px; }
+.secret-more { font-size: 17px; line-height: 1.4; margin-top: 18px; }
+.secret-label:empty, .secret-more:empty { display: none; }
 .intro-text span { display: block; opacity: 0; animation: appear 1.2s ease forwards; }
 .intro-hint { position: absolute; bottom: calc(var(--bottom) + 24px); left: 32px; font-size: 12px; color: var(--beton); opacity: 0; animation: appear 1s ease 3.6s forwards; }

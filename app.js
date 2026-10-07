@@ -34,18 +34,20 @@
   const danas = () => { const n = beograd(); return danBroj(n.y, n.m, n.d); };
 
   // ---------- Tajna poruka ----------
-  function tajna(tekst) {
+  function tajna(tekst, sitnije = "", oznaka = "") {
     const el = $("secret");
+    $("secret-label").textContent = oznaka;
     $("secret-text").textContent = tekst;
+    $("secret-more").textContent = sitnije;
     el.hidden = false;
     const otvoreno = Date.now();
     el.onclick = () => { if (Date.now() - otvoreno > 800) el.hidden = true; };
   }
 
   // ---------- Uvod ----------
-  function uvod(gotovo) {
+  function uvod() {
     const nateraj = new URLSearchParams(location.search).has("uvod");
-    if (!nateraj && store.get("uvodVidjen", false)) return gotovo();
+    if (!nateraj && store.get("uvodVidjen", false)) return;
     const el = $("intro");
     $("intro-text").innerHTML = PODACI.uvod
       .map((red, i) => `<span style="animation-delay:${0.4 + i * 1.1}s">${esc(red)}</span>`)
@@ -59,7 +61,6 @@
       el.style.transition = "opacity 0.6s";
       el.style.opacity = "0";
       setTimeout(() => { el.hidden = true; el.style.opacity = ""; }, 600);
-      gotovo();
     };
   }
 
@@ -163,8 +164,8 @@
     return out;
   }
 
-  // Zabavna poređenja, menjaju se na dodir broja
-  let nacin = 0;
+  // Zabavna poređenja, menjaju se na dodir broja. Linija na karti prati prevozno sredstvo.
+  let nacin = 0, vrstaRute = "linija";
   const trajanje = (sati) => {
     const min = Math.round(sati * 60);
     return `${Math.floor(min / 60)}h ${pad(min % 60)}min`;
@@ -173,14 +174,16 @@
     const [a, b] = gradovi();
     const km = haversin(a, b);
     const nacini = [
-      ["vazdušnom linijom", broj.format(Math.round(km)), "km"],
-      ["avionom, otprilike", trajanje(km / 780 + 0.5), "leta"],
-      ["kolima, otprilike", trajanje((km * 1.3) / 85), "vožnje bez pauze"],
-      ["vrani bi trebalo", trajanje(km / 45), "leta bez odmora"],
-      ["peške", new Intl.NumberFormat("sr-Latn-RS", { maximumFractionDigits: 1 }).format(km / 0.00075 / 1e6), "miliona koraka"],
+      ["vazdušnom linijom", broj.format(Math.round(km)), "km", "linija"],
+      ["avionom, otprilike", trajanje(km / 780 + 0.5), "leta", "avion"],
+      ["kolima, otprilike", trajanje((km * 1.3) / 85), "vožnje bez pauze", "kola"],
+      ["vrani bi trebalo", trajanje(km / 45), "leta bez odmora", "vrana"],
+      ["peške", new Intl.NumberFormat("sr-Latn-RS", { maximumFractionDigits: 1 }).format(km / 0.00075 / 1e6), "miliona koraka", "peske"],
     ];
     const i = nacin % nacini.length;
-    const [naslov, vr, jed] = nacini[i];
+    const [naslov, vr, jed, vrsta] = nacini[i];
+    vrstaRute = vrsta;
+    crtajRutu();
     const el = $("km");
     $("km-label").textContent = naslov;
     el.textContent = vr;
@@ -252,13 +255,18 @@
     }
   }
 
+  let karta = null;
+
   function crtajMapu() {
     const svg = $("map");
     const [a, b] = gradovi();
     const W = svg.clientWidth || 375, H = svg.clientHeight || 300;
     const k = Math.cos(((a.lat + b.lat) / 2) * RAD);
     const pr = ([lon, lat]) => [lon * k, -lat];
-    const ruta = velikiKrug(a, b).map(pr);
+    // Njegov grad je onaj sa njegovim imenom, inače prvi
+    const on = [a, b].find((g) => g.ko === PODACI.ime) || a;
+    const ona = on === a ? b : a;
+    const ruta = velikiKrug(on, ona, 160).map(pr);
 
     // Uvek se vidi cela Evropa; ako je neki grad van nje, karta se raširi
     const okvir = [...ruta, pr([-11, 35]), pr([32, 61])];
@@ -271,22 +279,101 @@
     const px = w / W; // koliko jedinica karte je jedan piksel
 
     const tacka = (g, klasa) => { const [x, y] = pr([g.lon, g.lat]); return `<circle class="${klasa}" cx="${x}" cy="${y}" r="${4.5 * px}"/>`; };
-    // Njegov grad je onaj sa njegovim imenom, inače prvi
-    const on = [a, b].find((g) => g.ko === PODACI.ime) || a;
-    const ona = on === a ? b : a;
     const [ox, oy] = pr([on.lon, on.lat]);
     const obim = 2 * Math.PI * 13 * px;
 
     svg.innerHTML = `
       ${typeof KOPNO === "string" ? `<path class="kopno" transform="scale(${k} 1)" d="${KOPNO}"/>` : ""}
-      <path class="ruta ruta-anim" d="M${ruta.map((p) => p.join(",")).join("L")}"/>
+      ${typeof GRANICE === "string" ? `<path class="granice" transform="scale(${k} 1)" d="${GRANICE}"/>` : ""}
+      <g id="ruta"></g>
       ${tacka(ona, "tacka-ona")}
       ${tacka(on, "tacka-on")}
       <circle class="hold-ring" id="hold-ring" cx="${ox}" cy="${oy}" r="${13 * px}" stroke-width="${2 * px}"
         stroke-dasharray="${obim}" stroke-dashoffset="${obim}" transform="rotate(-90 ${ox} ${oy})"/>
       <circle id="hold-hit" cx="${ox}" cy="${oy}" r="${26 * px}" fill="transparent" style="touch-action:none"/>`;
 
+    karta = { ruta, px };
+    crtajRutu(false);
     podesiDugoDrzanje(obim);
+  }
+
+  // Oblici u pikselima, okrenuti nadesno (u pravcu kretanja)
+  const AVION = `<path d="M7,0C7,-.8 6,-1 5,-1L1.5,-1L-2,-6.5L-3.4,-6.5L-1.2,-1L-4.5,-1L-6,-2.8L-7,-2.8L-6,0L-7,2.8L-6,2.8L-4.5,1L-1.2,1L-3.4,6.5L-2,6.5L1.5,1L5,1C6,1 7,.8 7,0Z"/>`;
+  const KOLA = `<rect x="-5" y="-2.7" width="10" height="5.4" rx="1.5"/><rect class="staklo" x=".9" y="-2.1" width="1.8" height="4.2" rx=".6"/>`;
+  const PTICA = `<path class="krila" d="M-9,1Q-4.5,-6 0,0Q4.5,-6 9,1">
+    <animateTransform attributeName="transform" type="scale" values="1 1;1 -.6;1 1" dur=".5s" repeatCount="indefinite"/></path>`;
+
+  function crtajRutu(pretapanje = true) {
+    const g = $("ruta");
+    if (!g || !karta) return;
+    const { ruta, px } = karta;
+    if (ruta.length < 2) { g.innerHTML = ""; return; } // isti grad dva puta
+    const d = (t) => "M" + t.map((p) => `${+p[0].toFixed(3)},${+p[1].toFixed(3)}`).join("L");
+
+    // Dužina puta (u jedinicama karte) do svake tačke
+    const kum = [0];
+    for (let i = 1; i < ruta.length; i++) kum.push(kum[i - 1] + Math.hypot(ruta[i][0] - ruta[i - 1][0], ruta[i][1] - ruta[i - 1][1]));
+    const duz = kum.at(-1) / px; // u pikselima
+
+    // Pomera put levo-desno od prave linije; pomak(f) je u pikselima, f ide od 0 (on) do 1 (ona)
+    const smer = ruta.at(-1)[0] >= ruta[0][0] ? 1 : -1; // da plus uvek bude ka severu
+    const pomeri = (pomak) => ruta.map((p, i) => {
+      const a = ruta[Math.max(0, i - 1)], b = ruta[Math.min(ruta.length - 1, i + 1)];
+      const tx = b[0] - a[0], ty = b[1] - a[1], l = Math.hypot(tx, ty) || 1;
+      const o = pomak(i / (ruta.length - 1)) * px * smer;
+      return [p[0] + (ty / l) * o, p[1] - (tx / l) * o];
+    });
+
+    // Prevozno sredstvo koje ide od njega ka njoj, ukrug
+    const putuje = (put, oblik, sekundi, okreni = true) => `
+      <g class="vozilo"><g transform="scale(${px})">${oblik}</g>
+        <animateMotion dur="${sekundi}s" repeatCount="indefinite" path="${put}"${okreni ? ' rotate="auto"' : ""}/></g>`;
+
+    let html;
+    if (vrstaRute === "avion") {
+      // Luk kao na kartama letova
+      const put = d(pomeri((f) => Math.sin(Math.PI * f) * Math.min(60, duz * 0.18)));
+      html = `<path class="ruta ruta-let" d="${put}"/>${putuje(put, AVION, 5)}`;
+    } else if (vrstaRute === "kola") {
+      // Krivudav drum sa isprekidanom linijom na sredini
+      const t = Math.max(2, Math.round(duz / 45)), A = Math.min(9, duz * 0.05);
+      const put = d(pomeri((f) => Math.sqrt(Math.sin(Math.PI * f)) * A *
+        (0.65 * Math.sin(2 * Math.PI * t * f + 0.7) + 0.35 * Math.sin(2 * Math.PI * t * 2.3 * f))));
+      html = `<path class="drum" d="${put}"/><path class="ruta ruta-drum" d="${put}"/>${putuje(put, KOLA, 10)}`;
+    } else if (vrstaRute === "vrana") {
+      // Talasast let, ptica maše krilima
+      const t = Math.max(3, Math.round(duz / 28));
+      const put = d(pomeri((f) => Math.sin(Math.PI * f) * 5 * Math.sin(2 * Math.PI * t * f)));
+      html = `<path class="ruta ruta-ptica" d="${put}"/>${putuje(put, PTICA, 8, false)}`;
+    } else if (vrstaRute === "peske") {
+      // Stope, naizmenično leva i desna, jedna za drugom
+      const n = Math.max(2, Math.floor((duz - 16) / 7));
+      const T = 8;
+      const stope = [];
+      for (let j = 0; j <= n; j++) {
+        const s = (8 + (j / n) * (duz - 16)) * px;
+        const i = Math.max(1, kum.findIndex((c) => c >= s));
+        const a = ruta[i - 1], b = ruta[i], f = (s - kum[i - 1]) / (kum[i] - kum[i - 1] || 1);
+        const ugao = Math.atan2(b[1] - a[1], b[0] - a[0]) / RAD;
+        stope.push(`<ellipse class="stopa" cx="0" cy="${j % 2 ? 1.6 : -1.6}" rx="2" ry="1.1"
+          transform="translate(${a[0] + (b[0] - a[0]) * f} ${a[1] + (b[1] - a[1]) * f}) rotate(${ugao}) scale(${px})"
+          style="animation-delay:${((j / n) * T).toFixed(2)}s"/>`);
+      }
+      html = stope.join("");
+    } else {
+      html = `<path class="ruta ruta-anim" d="${d(ruta)}"/>`;
+    }
+    g.innerHTML = html;
+    if (pretapanje && g.animate) g.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 400, easing: "ease-out" });
+  }
+
+  // Svaki put sledeća činjenica, ukrug. Prva rečenica je naslov, ostatak ide sitnije.
+  function sledecaCinjenica() {
+    const lista = PODACI.tajne.dugoDrzanje;
+    const i = store.get("cinjenica", 0) % lista.length;
+    store.set("cinjenica", i + 1);
+    const [, naslov, ostalo] = lista[i].match(/^(.+?[.!?])\s+(.+)$/s) || [, lista[i], ""];
+    tajna(naslov, ostalo, "mole rat fact");
   }
 
   // Dugo držanje (1,2 s) na njegovoj tački
@@ -297,7 +384,7 @@
       e.preventDefault();
       ring.style.transition = "stroke-dashoffset 1.2s linear";
       ring.style.strokeDashoffset = "0";
-      tajmer = setTimeout(() => { prekini(); tajna(PODACI.tajne.dugoDrzanje); }, 1200);
+      tajmer = setTimeout(() => { prekini(); sledecaCinjenica(); }, 1200);
     };
     const prekini = () => {
       clearTimeout(tajmer);
@@ -427,9 +514,7 @@
 
   // Svaki dan jedna poruka. Prolazi kroz sve varijante pre nego što se išta ponovi,
   // i nikad ista osnovna poruka dva dana zaredom.
-  function porukaZaDan(dan) {
-    const V = varijante();
-    const ciklus = Math.floor(dan / V.length);
+  function redosled(V, ciklus) {
     const r = slucajno(1611 + ciklus * 7919);
     const red = V.slice();
     for (let i = red.length - 1; i > 0; i--) {
@@ -438,8 +523,26 @@
     }
     for (let i = 1; i < red.length; i++) {
       if (red[i].b !== red[i - 1].b) continue;
-      const j = red.findIndex((x, k) => k > i && x.b !== red[i - 1].b);
-      if (j > 0) [red[i], red[j]] = [red[j], red[i]];
+      let j = red.findIndex((x, k) => k > i && x.b !== red[i - 1].b);
+      // Pri kraju kruga nema kasnije poruke za zamenu, pa tražimo raniju
+      if (j < 0) j = red.findIndex((x, k) => k < i - 1 && x.b !== red[i - 1].b && x.b !== red[i + 1]?.b &&
+        red[k - 1]?.b !== red[i].b && red[k + 1].b !== red[i].b);
+      if (j >= 0) [red[i], red[j]] = [red[j], red[i]];
+    }
+    return red;
+  }
+
+  function porukaZaDan(dan) {
+    const V = varijante();
+    const ciklus = Math.floor(dan / V.length);
+    const red = redosled(V, ciklus);
+    // I na prelazu između dva kruga: prvi dan novog ne sme da ponovi poslednji dan starog
+    const juce = redosled(V, ciklus - 1).at(-1).b;
+    if (red[0].b === juce) {
+      const ok = (x, k) => k > 1 && k < red.length - 1 && x.b !== juce && x.b !== red[1].b &&
+        red[k - 1].b !== red[0].b && red[k + 1].b !== red[0].b;
+      const j = red.findIndex(ok);
+      if (j > 0) [red[0], red[j]] = [red[j], red[0]];
     }
     return red[dan % V.length].t;
   }
@@ -483,7 +586,7 @@
   // ---------- Navigacija ----------
   function podesiStranice() {
     const pages = $("pages"), dots = [...$("dots").children];
-    const idi = (i, glatko = true) => pages.scrollTo({ left: i * pages.clientWidth, behavior: glatko ? "smooth" : "auto" });
+    const idi = (i) => pages.scrollTo({ left: i * pages.clientWidth, behavior: "smooth" });
     dots.forEach((d, i) => (d.onclick = () => idi(i)));
     const oznaci = () => {
       const i = Math.round(pages.scrollLeft / pages.clientWidth);
@@ -491,7 +594,6 @@
     };
     pages.addEventListener("scroll", oznaci, { passive: true });
     oznaci();
-    return idi;
   }
 
   // ---------- Start ----------
@@ -502,7 +604,7 @@
   podesiGradove();
   podesiPoredjenja();
   podesiDobroJutro();
-  const idi = podesiStranice();
+  podesiStranice();
   osveziDaljinu();
 
   setInterval(odbrojavanje, 1000);
@@ -513,11 +615,7 @@
     odbrojavanje(); zajedno(); satiGradova(); vreme();
   });
 
-  uvod(() => {
-    // Ujutru se aplikacija otvara pravo na dobro jutro
-    const h = beograd().h;
-    if (h >= 5 && h < 11) idi(2, false);
-  });
+  uvod();
 
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
     navigator.serviceWorker.register("sw.js").catch(() => {});

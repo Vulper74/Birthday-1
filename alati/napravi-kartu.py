@@ -1,5 +1,6 @@
-# Pravi map-data.js iz world-atlas land-50m.json (Natural Earth, javni podaci).
-# Pokretanje: python3 alati/napravi-kartu.py /putanja/do/land-50m.json
+# Pravi map-data.js iz world-atlas countries-50m.json (Natural Earth, javni podaci):
+# obris kopna i granice između država.
+# Pokretanje: python3 alati/napravi-kartu.py /putanja/do/countries-50m.json
 import json, sys
 
 TOLERANCIJA = 0.08   # stepeni; manje = detaljnije, veći fajl
@@ -77,7 +78,30 @@ for geo in topo["objects"]["land"]["geometries"]:
                 continue
             delovi.append("M" + "L".join(f"{round(x, 2):g},{round(-y, 2):g}" for x, y in r) + "Z")
 
+# Granice: lukovi koje dele dve različite države
+SPOJENO = [{"Serbia", "Kosovo"}, {"Cyprus", "N. Cyprus"}]  # bez linije između njih
+KRIM = 282  # linija preko Perekopa; Krim crtamo bez ikakve granice
+
+def svi_lukovi(a):
+    return [a if a >= 0 else ~a] if isinstance(a, int) else [i for x in a for i in svi_lukovi(x)]
+
+koriste = {}
+for geo in topo["objects"]["countries"]["geometries"]:
+    for i in set(svi_lukovi(geo.get("arcs", []))):
+        koriste.setdefault(i, set()).add(geo["properties"]["name"])
+
+granice = []
+for i, drzave in sorted(koriste.items()):
+    if len(drzave) != 2 or drzave in SPOJENO or i == KRIM:
+        continue
+    t = bez_skokova(lukovi[i])
+    if max(p[1] for p in t) < -60:
+        continue
+    t = dp(t, TOLERANCIJA / 2)
+    granice.append("M" + "L".join(f"{round(x, 2):g},{round(-y, 2):g}" for x, y in t))
+
 with open("map-data.js", "w") as f:
-    f.write("// Obris kopna (Natural Earth preko world-atlas). Generisano: alati/napravi-kartu.py\n")
+    f.write("// Obris kopna i granice država (Natural Earth preko world-atlas). Generisano: alati/napravi-kartu.py\n")
     f.write(f'const KOPNO = "{"".join(delovi)}";\n')
-print(len(delovi), "oblika")
+    f.write(f'const GRANICE = "{"".join(granice)}";\n')
+print(len(delovi), "oblika,", len(granice), "granica")
