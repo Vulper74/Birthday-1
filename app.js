@@ -373,7 +373,7 @@
     const i = store.get("cinjenica", 0) % lista.length;
     store.set("cinjenica", i + 1);
     const [, naslov, ostalo] = lista[i].match(/^(.+?[.!?])\s+(.+)$/s) || [, lista[i], ""];
-    tajna(naslov, ostalo, "mole rat fact");
+    tajna(naslov, ostalo, "Mole rat fact");
   }
 
   // Dugo držanje (1,2 s) na njegovoj tački
